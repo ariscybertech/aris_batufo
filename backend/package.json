@@ -1,0 +1,29 @@
+{
+  "name": "batufo-backend",
+  "version": "0.0.0",
+  "description": "TypeScript packages.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "(cd ./packages/core && yarn tsc) && (cd ./packages/server && yarn tsc) && (cd ./packages/level-editor && yarn tsc)",
+    "start": "cd ./packages/server && DEBUG_COLORS=1 DEBUG='(app|stats|game*):(debug|info|error)' node ./dist/app.js",
+    "start:dev": "cd ./packages/server && DEBUG_COLORS=1 DEBUG='(app|stats|game*):(debug|info|error)' ts-node ./src/app.ts",
+    "gc:log": "ssh batufo 'sudo journalctl -u batufo.service'",
+    "gc:tail": "ssh batufo 'sudo journalctl -f -u batufo.service'",
+    "gc:update": "ssh batufo 'sudo ~/app/batufo/backend/gcloud/update.sh' && yarn gc:status",
+    "gc:status": "ssh batufo 'sudo service batufo status' && yarn gc:metrics",
+    "gc:metrics": "ssh batufo 'free -m -h'"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "tslib": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.13",
+    "prettier": "^2.0.5",
+    "ts-protoc-gen": "^0.12.0",
+    "typescript": "^3.9.3"
+  }
+}

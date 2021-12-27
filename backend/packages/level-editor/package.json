@@ -1,0 +1,42 @@
+{
+  "name": "@batufo/level-editor",
+  "version": "0.0.0",
+  "description": "Socket.io server for batufo game.",
+  "main": "dist/level-editor.js",
+  "types": "src/level-editor.ts",
+  "scripts": {
+    "tsc": "tsc",
+    "watch": "tsc --watch",
+    "dev": "parcel index.html",
+    "build": "./scripts/build.sh"
+  },
+  "browserslist": {
+    "development": [
+      "last 1 chrome version"
+    ]
+  },
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@batufo/core": "*",
+    "ace": "^1.3.0",
+    "ace-builds": "^1.4.11",
+    "debounce": "^1.2.0",
+    "debug": "^4.1.1",
+    "eventemitter3": "^4.0.4",
+    "react": "^16.13.1",
+    "react-ace": "^9.0.0",
+    "react-dom": "^16.13.1",
+    "react-split-pane": "^0.1.91",
+    "styled-components": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/debounce": "^1.2.0",
+    "@types/debug": "^4.1.5",
+    "@types/react": "^16.9.36",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-split-pane": "^0.1.67",
+    "@types/styled-components": "^5.1.0",
+    "parcel-bundler": "^1.12.4"
+  }
+}

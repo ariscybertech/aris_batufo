@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+// What to watch out for when updating message types to not break old clients.
+// https://developers.google.com/protocol-buffers/docs/proto3#updating
+
+// Requests
+message InfoRequest {}
+
+enum Platform {
+  MacOS = 0;
+  Android = 1;
+  Linux = 2;
+  Windows = 3;
+  IOS = 4;
+  Fuchsia = 5;
+  Web = 6;
+}
+
+message PlayRequest {
+  string levelName = 1;
+  Platform platform = 2;
+}
+
+message InfoResponse {
+  repeated LevelInfo levels = 1;
+}
+
+message ServerStatsUpdate {
+  uint32 totalGames = 1;
+  uint32 totalPlayers = 2;
+  map<string, uint32> runningLevelsCounts = 3;
+  map<string, uint32> waitingForLevelsCounts = 4;
+}
+
+// ServerMessages
+message PlayerDeparted {
+  uint32 clientID = 1;
+}
+
+message PlayerJoined {
+  uint32 clientID = 1;
+  uint32 playerIndex = 2;
+}
+
+// Responses
+
+message LevelInfo {
+  string name = 1;
+  uint32 nplayers = 2;
+}
+
+message PackedClientPlayerUpdate {
+  PackedPlayerModel player = 1;
+}
+
+message PackedClientSpawnedBulletUpdate {
+  PackedBulletModel spawnedBullet = 1;
+}
+
+message PackedClientSpawnedBombUpdate {
+  PackedTilePosition spawnPosition = 1;
+}
+
+message GameCreated {
+  uint32 gameID = 1;
+  uint32 clientID = 2;
+  uint32 playerIndex = 3;
+  PackedArena arena = 4;
+}
+
+enum PackedPickupType {
+  Medkit = 0;
+  Shield = 1;
+  Bomb = 2;
+}
+
+message PackedPickup {
+  PackedPickupType type = 1;
+  PackedTilePosition tilePosition = 2;
+}
+
+message PackedClientPickedUpUpdate {
+  PackedPoint colRow = 1;
+}
+
+message PackedArena {
+  repeated PackedTilePosition floorTiles = 1;
+  repeated PackedTilePosition walls = 2;
+  repeated PackedTilePosition playerPositions = 3;
+  uint32 nrows = 4;
+  uint32 ncols = 5;
+  uint32 tileSize = 6;
+  repeated PackedPickup pickups = 7;
+  repeated PackedTeleport teleports = 8;
+}
+
+message PackedPlayerModel {
+  uint32 id = 1;
+  PackedTilePosition tilePosition = 2;
+  PackedFractionalPoint velocity = 3;
+  DoubleFourDecimals angle = 4;
+  DoubleTwoDecimals health = 5;
+  uint32 shieldRemainingMs = 6;
+}
+
+message PackedBulletModel {
+  uint32 clientID = 1;
+  PackedTilePosition tilePosition = 2;
+  PackedFractionalPoint velocity = 3;
+}
+
+message PackedBombModel {
+  PackedTilePosition tilePosition = 1;
+}
+
+message PackedTeleport {
+  PackedPoint portA = 1;
+  PackedPoint portB = 2;
+}
+
+// colRow: tile column and row
+// relXY:  integer representation of offset from tile center
+//   Example: relX: 1.233 -> x = floor(1.233* 1000)
+message PackedTilePosition {
+  PackedPoint colRow = 1;
+  PackedFractionalPoint relXY = 2;
+}
+
+//
+// Primitives
+//
+
+// A PackedOffset packs signed x:double + y:double information
+// into one int32.
+// The upper 16 bits are x/col and the lower 16 bits are y/row.
+message PackedFractionalPoint {
+  uint32 xy = 1;
+}
+
+// A PackedPoint packs unsigned x:int + y:int information
+// into one int32.
+// The upper 16 bits are x and the lower 16 bits are y.
+message PackedPoint {
+  uint32 xy = 1;
+}
+
+message DoubleTwoDecimals {
+  int32 value = 1;
+}
+
+message DoubleFourDecimals {
+  int32 value = 1;
+}

@@ -1,0 +1,589 @@
+#+TITLE: batufo
+
+* Building a 2D Multiplayer Game from Scratch in #Flutter
+
+Hacking on a Multiplayer 2D #Flutter Game with a Node.js backend written in #TypeScript
+
+** Next Twitch Stream
+
+- show bombs and effect
+- explain how camera is used to simulate explosion
+- create level using editor
+
+* Release v1.0.0
+
+- [x] three + four player levels
+- [x] large two player level
+- [X] link to attributions via [[https://pub.dev/packages/url_launcher][url_launcher]]
+- [X] link to donations
+- [X] add donations links to main web page
+- [X] instruction youtube video (or remove link)
+- [X] play store release
+- [X] when not recording bottom row is drawn a bit too late on mobile
+- [X] better intro prose
+- [X] shield protects from bomb one time
+ 
+** Next
+
+- [X] teleportation
+
+** DONE Out of Game Bounds Problem
+
+When game is inactive for a while the ~dt~ is so large that the player position is calculated to be outside of the game boundaries.
+Since colission detection is simple it misses that player flew thru the wall.
+
+- fix 1: provide some ray-casting like feature to prevent flying thru walls
+- fix 2: detect if player is out of bounds, more specifically is on top of a floor tile and return him to the nearest in bounds tile
+
+Fix1 is some work but catches flying thru any kind of wall as well.
+Fix2 is very simple to implement (in minutes) but would theoretically allow players to jump across walls that are in bounds.
+
+* Server Side
+
+
+* Client Side
+
+** Different Weapons
+
+- [X] plant mines (bombs) in path
+- [X] possibly switch via back arrow | 's' | draw back
+
+*** WAIT Deferred
+
+- [ ] if you have no special weapon shoot normal bullets
+- [ ] volleys (shots that spread out) (slow to recharge)
+- [ ] laser beam that reflects of walls (slow to recharge)
+
+** Pickups
+
+We wanna add some pickups back in. Most importantly are health packets, but some diamonds to up the score would be nice as well.
+
+*** WAIT Bullets
+
+- [ ] limit amount of bullets which deplete whe we shoot (show above health bar)
+- [ ] add bullet pickups to level
+
+*** WAIT Diamonds
+
+- [ ] add diamonds to level
+- [ ] detect colission + remove like with health packets
+- [ ] increase score on colission
+- [ ] show score animation as was present in single player version
+
+*** DONE Health
+
+- [X] add health packets to level
+- [X] detect colission with health packets
+- [X] up players health after colission
+- [X] remove health packet on colission
+
+*** DONE Shields and Armor
+
+- [X] pickup one type of shield in order to be protected from bullets
+- [X] player needs to be rendered slightly diffently render a circle around it similarly as we do with health but larger radius
+- [X] shields last only a certain amount of time and decreases when hit by bullet
+- [X] when shield is active player receives no damage from bullets
+
+** WAIT Make Things Bigger
+
+Players reported things appearing too small at least on desktop.
+After going to 150% felt more comfortable. Resolution was ~1280*960~.
+
+- [ ] determine good tile size for desktop
+- [ ] keep server tile size constant since that gets sent to all players
+- [ ] however adapt rendering on client to device
+- [ ] most likely for mobile keep things the same
+- [ ] another idea is to determine size from window dimensions
+- [ ] so instead of showing more of the arena we show things bigger
+
+** Running Out of Bullets
+
+In order to not get stuck in the game we need a way to repleat bullets.
+One way would be to just refill everyone once all players have used up all their bullets.
+Another way is to make bullet packets appear randomly, i.e. not only the ones defined in Arena.
+
+** Fixes
+
+*** Ghost in Single Player Game
+
+Sometimes two players are in the same spot when we start the single player level.
+Only one player is controlled by us, the other one just sits there and never dies.
+
+*** Bullets Getting Stuck
+
+I've seen that some bullets get stuck at times, i.e. they stick around and stop moving.
+So far this is only an issue in the browser, most likely due to the game loop not updating when the browser looses focus.
+
+When a player runs into those he takes damage.
+
+A quick fix could be to just collect all those bullets by checking the ones with velocity zero.
+
+*** Web Performance
+
+Performance in the browser is lacking since the five level parallax effect was introduced.
+It is to the point of unplayability.
+The browser also doesn't support recording a picture.
+
+Things are much better inside the iframe since that limits the size of the game.
+Improvements could be had by either limiting the density of stars and planets drastically and/or only drawing parts of the effect in the browser.
+
+In the worst case we'll have to disable that effect in the browser all together.
+Alternatively just remove the full screen link to force people to play inside the iframe, which I did for now.
+
+Improved by lowering density of stars + planets via parallax options for web.
+
+- [ ] limit size of game widget and thus of the canvas, see [[file:client/lib/engine/game_widget.dart::bool get sizedByParent => true;][sizing strategy]]
+
+* WAIT Nice to Have
+
+** WAIT Visual Cues
+
+- [ ] make any player who is almost dying blink
+
+** WAIT Background Music
+
+So far [[https://www.youtube.com/watch?v=thCE35jUgA8&feature=youtu.be][this song]] was recommended, but license is unclear.
+
+** WAIT Devices and Fairness
+
+Considering that players on Desktop are at an advantage we could try to match up players by device. Obviously this only works/becomes an issue once we have a certain amount of players online.
+
+The [[https://github.com/google/flutter-desktop-embedding/tree/master/plugins/window_size][window size plugin]] could provide a way to enforce a max window size.
+
+This would be fixed if we make things larger on desktop
+
+** WAIT God View
+
+This god view shows all games going on in their own canvas box.
+Each canvas would be downsized to show the entire level view.
+Most likely this would be a hidden admin feature.
+
+It could help in detecting problems with game recycling.
+
+- [ ] show all games going on by selecting this in main menu
+- [ ] server sends all game IDs of active games
+- [ ] open view rendering canvas for each game that is active
+- [ ] each sub game subscribes to the respective namespace
+
+** WAIT Optimizations
+
+*** [ ] Smoothing Prediction Correction
+
+Right now whenever a player's position is synced that is different from the predicted one we just directly jump to it.
+It would be better to smooth this out by adapting the velocity so that eventually prediction and reality converge.
+
+- [ ] send updates immediately on thrust and spawned bullet while sending others like angle change + position changes at an interval
+
+*** [ ] Playability
+
+Multiple tweaks to enhance playability.
+
+- [X] assuming we show time to shoot in hud experiment with increasing it in order to avoid players just shooting randomly all over the place
+
+
+** DONE Improve Perf by Recording Building Images
+
+Most front camera ~z100~ is a bit different than the other cameras.
+As a result recording images cuts off on the right when the device is narrow (like a phone).
+However if we can get this to work we can get CPU usage to ~15% vs 25% when we're not recording buildings.
+
+* DONE Client Side
+
+** DONE Performance
+
+Investigate if we can draw only parts of the Canvas in order to improve perf, i.e. the part that is actually visible.
+
+- [X] determine visible rect for each camera
+- [X] only drawing stars inside visible rect
+- [X] pass covered tiles to stars and do not draw below them
+- [X] offset covered tiles correctly
+- [X] re-enable picture recording and make it work
+  - [X] record entire game area and record
+  - [X] cut out rect matching the visible area from src when drawing it
+- [X] render only visible planets (don't worry about being covered up)
+
+** Experience
+
+*** DONE Screens
+
+- [X] welcome screen
+- [X] link from welcome to game
+- [X] instruction screen
+- [X] link from welcome to instruction
+- [X] link at bottom of level screen to instruction
+- [X] prettier connection screen
+
+*** DONE Sound Effects
+
+Use the ~audioplayers: ^0.15.1~ package to play sounds on supported platforms.
+It seems to support all platforms now, just that only [[https://github.com/luanpotter/audioplayers#supported-formats][specific formats are available]] for each.
+From [[https://github.com/flame-engine/flame/blob/5a1c9e4949fd949f3fa44be3c43264db43e07c11/CHANGELOG.md#0191][flame changelog entry]] it looks like it supports web now.
+
+- For browser see [[https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API][web audio API]].
+- [[https://www.techotopia.com/index.php/Playing_Audio_on_iOS_8_using_AVAudioPlayer#Supported_Audio_Formats][iOS supported formats]]
+- [[https://stuff.mit.edu/afs/sipb/project/android/docs/guide/appendix/media-formats.html][android supported formats]]
+
+I see folders for all but ~web~, so not sure if it is really supported.
+
+- [X] ceate a ~Sounds~ class that exposes methods to play game specific sounds, i.e. not just a generic ~play~, but ~playBullet~
+- [X] pull in thrust sound from [[https://github.com/thlorenz/ufo_2d/tree/first-try/assets/audio][ufo_2d version]]
+- [X] pull [[https://github.com/thlorenz/ufo_2d/blob/96639f53290823e2bfdc53d270192279980682ce/assets/attribs.txt][attributions]] with it
+- [X] implement thrust sound
+- [X] implement shooting sound
+- [X] implement sound when hitting a wall
+- [X] implement sound when bullet explodes
+- [X] add option to turn sound off
+
+
+**** DONE Resources
+
+- [[https://github.com/thlorenz/ufo_2d/blob/96bde3749da1102394b2b8dbec85435e6a9d818b/lib/audio/audio.dart][ufo_2d sounds relying on flame]]
+- [[https://github.com/flame-engine/flame/blob/master/lib/audio_pool.dart][flame: audio_pool.dart]]
+- [[https://github.com/flame-engine/flame/blob/master/lib/flame_audio.dart][flame: audio.dart]]
+
+
+*** DONE Background with Stars
+
+We currently show a Grid underneath the actual game. This should show a universe.
+The simple solution would be just to add a large image there, but that would increase game size.
+A better solution would be to randomly create stars on a black background, possibly also planets, using the planets package we use for level backgrounds.
+
+- [X] replace grid with black background
+- [X] generate and render stars
+- [X] create planets layer
+- [X] resize planets to not take too much space and fit best with the game (around tile size)
+- [X] add planet images to assets and attribute them
+- [X] walk through arena and randomly place nothing | one of 5 planet images in planets layer
+- [X] use two stars layers (one smaller stars, nearer larger stars)
+- [X] do the same for planets
+- [X] support levels to have no floor tiles in the middle to get more of a star effect
+
+
+
+*** DONE Bullet Killing Shooter Problem
+
+Some bullets explode right in front of player when they are shot. Possibly they actually collide with the player itself which will be easier to triage once we have the health in the hud.
+
+It looks like they are and there are two solutions to this.
+
+- A) ignore collisions of bullets with the same ID as the player they collide with
+- B) improve bullet initial velocity calculation to take player velocity into account, thus it should be practically impossible for a player to fly into its own bullet
+
+FIXED: by positioning the bullet starting point a bit away from the player.
+
+*** DONE Browser
+
+Currently not working in browser due to socket.io issue. May be fixable if we convert messages we broadcast to strings like we do for the messages that DO work in the browser.
+
+Found reason for things blowing up via the browser is that for some reason the angle that is sent gets packed to be larger than 31-bit, so when we started round tripping the serialization and sending as ~string~ like with the other message we run into problems.
+
+We blow up during ~serialization~. Here are the min/max values I found in the source.
+In particular we are above ~jspb.BinaryConstants.TWO_TO_31 = 2147483648~ which causes the crash.
+
+The actual value in one case was ~4294964949~
+
+#+BEGIN_SRC js
+jspb.BinaryConstants.FLOAT32_EPS = 1.401298464324817E-45;
+jspb.BinaryConstants.FLOAT32_MIN = 1.1754943508222875E-38;
+jspb.BinaryConstants.FLOAT32_MAX = 3.4028234663852886E38;
+jspb.BinaryConstants.FLOAT64_EPS = 4.9E-324;
+jspb.BinaryConstants.FLOAT64_MIN = 2.2250738585072014E-308;
+jspb.BinaryConstants.FLOAT64_MAX = 1.7976931348623157E308;
+jspb.BinaryConstants.TWO_TO_20 = 1048576;
+jspb.BinaryConstants.TWO_TO_23 = 8388608;
+jspb.BinaryConstants.TWO_TO_31 = 2147483648;
+jspb.BinaryConstants.TWO_TO_32 = 4294967296;
+jspb.BinaryConstants.TWO_TO_52 = 4503599627370496;
+jspb.BinaryConstants.TWO_TO_63 = 0x7fffffffffffffff;
+jspb.BinaryConstants.TWO_TO_64 = 1.8446744073709552E19;
+#+END_SRC
+
+- [X] fix1: ensuring that we never send a negative angle
+- [X] fix2: ensuring that health is never negative
+
+*** DONE Focus on Exit Button Issue
+
+The exit button gets focused when entering a game and activates when the space bar is hit. We need to find a way to prevent that.
+This seems to only happen when using arrow keys. It seems we need to do either of the two below points and/or eat up the arrow keys or somehow prevent the hud from accepting keyboard input.
+
+Fixed by replacing ~IconButton~ with a ~GestureDetector~ with an ~Icon~. The ~GestureDetector~ doesn't receive focus via the keyboard.
+
+
+** DONE Issues
+
+- [X] when player leaves while others are waiting, that is not accounted for
+- [X] stop recycling started games
+- [X] scroll levels so I can get to all of them
+- [X] only score if *my* bullet killed a player
+- [X] scoring is still not right, sometimes we don't score when we hit a player and it seems like the player htat got hit scored instead
+
+** DONE Dead Game Removal
+
+Even though we could try to detect when a game is over due to a winner we need a more generic solution anyways.
+In the case that all players loose interest and disconnect we still need to collect the game eventually.
+
+Therefore a more consistent approach would be to collect any game that didn't get an update from any client for more than 5 secs or so.
+Server just runs that check every 5 secs which suffices to weed out dead games.
+
+** DONE Game Cycle
+
+Players already communicate their health to other players which show them as dead.
+All that is missing is a regular check client side how many players are still alive.
+If only one is alive then we won. (except in single player modus)
+If we die we lost.
+
+- [X] detect when game is over either way
+- [X] show winner screen if we are last player around
+- [X] show looser screen for each player that is killed
+- [X] provide /Back to Menu/ button which allows player to select another level
+- [X] provide /Try Again/ button which restarts player in the same level
+- [X] recycle game + related rooms on server for ended games
+- [X] if player leaves server sends ~'game:player-departed'~ to the client
+- [X] client removes that player from the list of players
+- [X] as another measure clients who we haven't heard of in a long time (i.e. 1 min) we need to /leave/ them
+- [X] as a bonus server could detect games from which all clients disconnected and/or haven't gotten any updates in a long time and recycle those regularly
+
+
+*** DONE Disconnected
+
+When we don't hear from a player for a while we need to declare it dead, i.e. send a fake update to all other players with health set to 0.
+Otherwise that player becomes invincible as it never reports its health status which the other players rely on to show him as dead.
+
+** DONE Exit Game Prematurely
+
+- [X] provide exit game button
+- [X] pressing it takes us back to select level screen
+- [X] waiting screen should also include amount of players waiting, i.e. 2/3
+- [X] waiting screen should include exit button
+- [X] when all players but one exited last player wins and game ends
+- [X] server sends each time a player joins to prevent game from starting before we know about all players client side
+
+
+
+*** DONE Waiting on Players
+
+- [X] communicate to server that we left and then close socket connection for game
+
+** DONE Game Stats
+
+- [X] server regularly emits a stats message
+- [X] show how many players online in main menu
+- [X] show how many players are in games that aren't full, i.e. 3/4 waiting on 1
+
+** DONE Scoring
+
+- [X] player gains score whenever his bullet hits a player
+- [X] player gains lots more score if he kills a player
+- [X] show score in hud
+
+** DONE Bullet Damage
+
+At this point when a player is hit by a bullet both sides of the game deal out the damage and consider the player killed eventually.
+This is not exactly a problem ATM as both sides agree, but is odd.
+
+Instead it should either be the bullet originator who deals out the damage or the player hit by the bullet.
+
+It actually makes sense to increase the bullet originator's score when he hits and kills a player and thus would be more consistent if he also communicates dealt damage.
+However we know who the bullet belonged to via the ID, so the player dealt damage to could also communicate that fact including originator ID.
+The originator then increases its score.
+
+*** SOLUTION
+
+Inside the [[file:client/lib/controllers/game_controller.dart::void _onPlayerHitByBullet(PlayerModel player) {][GameController]] we deal out health damage only to ourselves.
+However when we hit someone else we score. We calculate prospected health and if it is zero we assume that we killed the player and gain appropriately more score.
+
+** DONE Hud
+
+- [X] show hud widget on top of game
+- [X] show health in hud
+- [X] show how many players left in game in hud
+- [X] show time to shoot in hud
+- [X] show time to thrust in hud
+
+** DONE Chores
+
+- [X] bullets need to include clientID in the model in order to identify shooter when they hit
+- [X] spawned bullet updates no longer need to include clientID
+- [X] player updates no longer need to include clientID
+
+** DONE Inputs
+
+- [X] make panning to rotate work
+- [X] make tapping to shoot work
+- [X] ensure this works on phone
+
+ 
+* DONE Level Editor
+
+** DONE Text Based Version
+
+- [X] setup TypeScript project
+- [X] render an empty Canvas with a Grid
+- [X] find a way to reuse Arena from Tilemap from Level String code
+  - [X] reach into server module or pull out common package
+- [X] convert string to arena and render it in Canvas
+- [X] use simple rects with different colors initially
+- [X] load initial string and pass it to renderer
+- [X] how can we load and render an image in Canvas
+
+** DONE Interactive Version
+
+This version would allow editing level via drag/drop interface instead of writing to a file.
+Lots has been implemented at this point
+
+- [X] keyboard shortcuts to switch paint type
+- [X] black image to remove floor and show universe
+- [X] layout menu better (most likely to right of canvas)
+- [X] update coordinates also on hover select
+- [X] try to scroll selected tile into view when cursor change originated in editor
+- [X] store current state in local storage so on page refresh (in case things crash) we can get our current level back
+- [X] have a empty + sample button to load canned levels
+- [X] vim/emacs/normal mode selectors
+- [X] undo icon which just invokes editor undo
+
+** DONE Saving Encoding
+
+Figure out a way to save level content in URL so we can share them with others.
+Think about how people could play their levels, i.e. by adding them to the server for a limited time or so.
+
+- [X] base64 encoding + packing level
+- [X] update url query on each /valid/ change
+- [X] load from query string during init
+- [X] script that takes text file, converts it to query + opens in browser to be invoked from emacs or other editor on demand (i.e. via compile command) or on each save
+
+
+* DONE Server Side
+
+** DONE Device Stats
+
+It'd be nice to collect stats about which device/OS players are using when playing.
+
+- [X] client needs a reliable way to send device via an enum
+- [X] OSX, Android, iOS and Linux use ~Platform~
+- [X] web is assumed when platform query fails
+- [X] client send that enum as part of request info attempt
+- [X] server maintains map of currently active devices and logs that regularly whenever totals are calculated
+
+** DONE Rooms
+
+It seems that for our app it makes more sense to create a /room/ per game instead of a /namespace/.
+As explained [[https://stackoverflow.com/a/17276952][here]] create namespaces dynamically on a running app you use them mainly as *predefined* separate sections of you application.
+However our games are not predefined.
+
+If, on the other hand you need to create ad hoc compartments, on the fly, to accommodate groups of users/connections, it is best to use rooms.
+
+That is much closer to what our games are.
+
+- [X] use rooms instead of namespaces
+- [X] restore current functionality
+
+
+** DONE Networking
+
+*** DONE Server Relays Player Updates to other Players
+
+ - [X] players need to send updates to server
+ - [X] server needs to propagate them
+ - [X] figure out why ~Offset~ is always ~Offset.zero~
+ - [X] clients need to sync other players accordingly
+
+*** DONE Server Relays Spawned Bullest to other Players
+
+ - [X] when player shoots bullet it updates server either as part of player update or separate event
+ - [X] server updates all clients with spawned bullet info
+
+*** DONE PlayerRequest -> PlayingClient Init [7/7]
+:LOGBOOK:
+CLOCK: [2020-05-22 Fri 18:35]--[2020-05-22 Fri 19:59] =>  1:24
+CLOCK: [2020-05-21 Thu 19:50]--[2020-05-21 Thu 20:20] =>  0:30
+CLOCK: [2020-05-21 Thu 18:37]--[2020-05-21 Thu 19:42] =>  1:05
+:END:
+
+- [X] send play request to server including desired level
+- [X] port tilemap creation from dart to typescript
+- [X] port arena creation from dart to typescript in order to build arena on the server
+- [X] implement all arena related pack logic
+- [X] implement two sample levels
+- [X] server reponds with ids + arena
+- [X] client prints out arena info
+
+*** DONE Init Client from Server Arena
+:LOGBOOK:
+CLOCK: [2020-05-25 Mon 18:47]--[2020-05-25 Mon 20:03] =>  1:16
+:END:
+
+- [X] client connects
+- [X] client sends play request
+- [X] server responds with playing client including arena
+- [X] client renders arena with current player and is in a playable state
+
+**** Resources
+
+- [[https://github.com/carlostse/nodejs-protobuf-socketio][socket.io sample]]
+- [[https://github.com/rikulo/socket.io-client-dart][dart socket.io client lib]]
+- [[https://github.com/improbable-eng/ts-protoc-gen][ts-protoc-gen]]
+
+*** DONE Add Stream based State Management
+
+**** Universe  [6/6]
+
+Manages states and emits them so stream controllers can be used to render appropriate widgets.
+
+- [X] Selecting Level State
+- [X] Game Created State (shows waiting for players) includes arena with all players
+- [X] Game Started State (subscribes to server updates) includes clientID
+- [X] ~Client~ rpc class should have no state
+- [X] server needs to send ~ServerInfo~
+- [X] server needs to include client index in arena players
+
+*** DONE Socket.io Spike [0/0]
+:LOGBOOK:
+CLOCK: [2020-05-20 Wed 18:41]--[2020-05-20 Wed 19:42] =>  1:01
+CLOCK: [2020-05-15 Fri 18:40]--[2020-05-15 Fri 20:17] =>  1:37
+CLOCK: [2020-05-14 Thu 18:40]--[2020-05-14 Thu 20:20] =>  1:40
+:END:
+
+- [X] setup TS project
+- [X] simple socket.io server in TypeScript
+- [X] write commandline socket.io dart client
+  - [X] [[*Try possible fixes][Try possible fixes]]
+- [X] communicate between the two
+- [X] find proto lib for JS/TS
+- [X] write proto generator script
+- [X] communicate proto messages and declare it impossible for now
+
+**** Status
+
+- communicating between server and client, but dart client is unable to deserialize message
+- Node.js server + client class have static ~(de)serialize~ methods, but dart classes don't
+- also data received is not a ~List~ either
+- possibly include a string in the payload to understand data format better
+
+*** KILL Using JSON format
+:LOGBOOK:
+CLOCK: [2020-05-20 Wed 19:51]--[2020-05-20 Wed 20:11] =>  0:20
+:END:
+
+No longer necessary since we figured out how to work around the dart socket.io lib treating all incoming messages as JSON.
+This allows us to use proto definitions and smaller /albeit not ideal/ payloads (due to the workaround).
+  
+*** DONE Fixes Picture Recording
+
+- [X] dispose picture when creating a new one
+- [X] alternatively test perf improvements when storing and ~Image~ vs. a ~Picture~ - do for stars only first [[https://github.com/flutter/flutter/issues/41731][related issue]]
+
+* Resources
+
+** UI
+
+- [[https://material.io/resources/icons/?style=baseline][material icons]]
+
+* Flutter Perf Problems
+
+- upgrading to latest dev (released 6/11/2020) caused huge canvas perf degradation on MacOS
+- from ~<=30%~ CPU to ~>100%~ CPU and from 60 frames/sec to 30 frames/sec
+- seems to be version ~1.19.0-5.0.pre~
+- moving to ~stable~ channel is not an option as that doesn't support MacOS
+- ran ~flutter downgrade~ to ~Downgrade flutter to version 1.19.0-4.0.pre~ improved things again
+- discovered that resizing window to narrow size (portrait mode) causes similar issues in debug mode even with downgraded flutter version
+- resizing to square shape results in much better performance

@@ -1,0 +1,17 @@
+{
+  "name": "@batufo/core",
+  "version": "0.0.0",
+  "description": "Batufo core libraries.",
+  "main": "dist/core.js",
+  "types": "src/core.ts",
+  "scripts": {
+    "tsc": "tsc && rm -rf ./dist/generated && cp -R ./src/generated ./dist/generated",
+    "watch": "tsc --watch"
+  },
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "6bit-encoder": "^0.2.0"
+  },
+  "devDependencies": {}
+}
